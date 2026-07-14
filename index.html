@@ -10,6 +10,111 @@
             padding: 0;
             box-sizing: border-box;
         }
+        <!-- 
+  CPF Validation Snippet for MyBrazilBox
+  Add this inside a "Custom HTML" or "Embed Code" block on your Namecheap site,
+  placed near/after your CPF input field.
+  
+  IMPORTANT: Update the two selectors marked with ⚠️ below to match your actual
+  form's field ID/name and submit button, since builder-generated forms use
+  auto-generated IDs.
+-->
+
+<script>
+(function () {
+  // ---- CPF validation logic (no external calls, pure math) ----
+  function isValidCPF(raw) {
+    const cpf = String(raw).replace(/[^\d]/g, '');
+
+    if (cpf.length !== 11) return false;
+
+    // Reject known fake sequences (000.000.000-00, 111.111.111-11, etc.)
+    if (/^(\d)\1{10}$/.test(cpf)) return false;
+
+    // First check digit
+    let sum = 0;
+    for (let i = 0; i < 9; i++) sum += parseInt(cpf[i]) * (10 - i);
+    let firstCheck = (sum * 10) % 11;
+    if (firstCheck === 10) firstCheck = 0;
+    if (firstCheck !== parseInt(cpf[9])) return false;
+
+    // Second check digit
+    sum = 0;
+    for (let i = 0; i < 10; i++) sum += parseInt(cpf[i]) * (11 - i);
+    let secondCheck = (sum * 10) % 11;
+    if (secondCheck === 10) secondCheck = 0;
+    if (secondCheck !== parseInt(cpf[10])) return false;
+
+    return true;
+  }
+
+  // ---- Auto-format as user types: 000.000.000-00 ----
+  function formatCPF(value) {
+    let v = value.replace(/\D/g, '').slice(0, 11);
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    return v;
+  }
+
+  // ⚠️ UPDATE THIS: selector for your CPF input field
+  // Right-click the field on your live site > Inspect, and copy its id or name
+  const cpfInput = document.querySelector('input[name="cpf"], input[id*="cpf" i]');
+
+  // ⚠️ UPDATE THIS: selector for your form's submit button
+  const submitBtn = document.querySelector('button[type="submit"], input[type="submit"]');
+
+  if (!cpfInput) {
+    console.warn('CPF validation script: could not find CPF input. Update the selector.');
+    return;
+  }
+
+  // Create an error message element under the field
+  const errorMsg = document.createElement('div');
+  errorMsg.style.color = '#dc2626';
+  errorMsg.style.fontSize = '13px';
+  errorMsg.style.marginTop = '4px';
+  errorMsg.style.display = 'none';
+  errorMsg.textContent = 'CPF inválido. Verifique os números digitados.';
+  cpfInput.parentNode.insertBefore(errorMsg, cpfInput.nextSibling);
+
+  // Format as user types
+  cpfInput.addEventListener('input', function () {
+    cpfInput.value = formatCPF(cpfInput.value);
+  });
+
+  // Validate on blur (when they leave the field)
+  cpfInput.addEventListener('blur', function () {
+    const value = cpfInput.value.trim();
+    if (value === '') {
+      // empty is allowed if field is optional — remove this block if you make it required
+      errorMsg.style.display = 'none';
+      cpfInput.style.borderColor = '';
+      return;
+    }
+    if (isValidCPF(value)) {
+      errorMsg.style.display = 'none';
+      cpfInput.style.borderColor = '#16a34a'; // green = valid
+    } else {
+      errorMsg.style.display = 'block';
+      cpfInput.style.borderColor = '#dc2626'; // red = invalid
+    }
+  });
+
+  // Block form submission if CPF is filled in but invalid
+  if (submitBtn) {
+    submitBtn.addEventListener('click', function (e) {
+      const value = cpfInput.value.trim();
+      if (value !== '' && !isValidCPF(value)) {
+        e.preventDefault();
+        errorMsg.style.display = 'block';
+        cpfInput.style.borderColor = '#dc2626';
+        cpfInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+  }
+})();
+</script>
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
